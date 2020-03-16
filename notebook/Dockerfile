@@ -72,7 +72,7 @@ RUN conda install --yes \
     rm -rf /home/$NB_USER/.node-gyp && \
     find /opt/conda/ -type f,l -name '*.a' -delete && \
     find /opt/conda/ -type f,l -name '*.pyc' -delete && \
-    find /opt/conda/lib/python*/site-packages/bokeh/server/static -type f,l -name '*.js' -not -name '*.min.js' -delete \
+    find /opt/conda/lib/python*/site-packages/bokeh/server/static -type f,l -name '*.js' -not -name '*.min.js' -delete && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
 
