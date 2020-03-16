@@ -61,10 +61,10 @@ RUN conda install --yes \
     && \
     conda clean --all -f -y && \
     jupyter nbextension enable --py widgetsnbextension --sys-prefix && \
-    jupyter labextension install @jupyter-widgets/jupyterlab-manager@^2.0.0 --no-build && \
-    jupyter labextension install @bokeh/jupyter_bokeh@^2.0.0 --no-build && \
-    jupyter labextension install jupyter-matplotlib@^0.7.2 --no-build && \
-    jupyter labextension install dask-labextension --no-build \
+    jupyter labextension install @jupyter-widgets/jupyterlab-manager@^2.0.0 && \
+    jupyter labextension install @bokeh/jupyter_bokeh@^2.0.0 && \
+    jupyter labextension install jupyter-matplotlib@^0.7.2 && \
+    jupyter labextension install dask-labextension \
     jupyter lab build && \
     npm cache clean --force && \
     rm -rf $CONDA_DIR/share/jupyter/lab/staging && \
