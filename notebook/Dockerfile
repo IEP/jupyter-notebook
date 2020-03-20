@@ -58,6 +58,10 @@ RUN conda install --yes \
     'conda-forge::dask-labextension=2.0.0' \
     'conda-forge::python-graphviz=0.13.2' \
     'conda-forge::html5lib=1.0.1' \
+    # Custom
+    'conda-forge::wordcloud=1.6.*' \
+    'anaconda::nltk=3.4.*' \
+    'plotly::plotly=4.5.*' \
     && \
     conda clean --all -f -y && \
     jupyter nbextension enable --py widgetsnbextension --sys-prefix && \
@@ -95,6 +99,9 @@ RUN cd /tmp && \
 ENV XDG_CACHE_HOME /home/$NB_USER/.cache/
 RUN MPLBACKEND=Agg python -c "import matplotlib.pyplot" && \
     fix-permissions /home/$NB_USER
+
+# Custom
+RUN python -m nltk.downloader popular
 
 # Dask
 USER root
