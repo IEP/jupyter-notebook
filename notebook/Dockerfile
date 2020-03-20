@@ -60,8 +60,8 @@ RUN conda install --yes \
     'conda-forge::html5lib=1.0.1' \
     # Custom
     'conda-forge::wordcloud=1.6.*' \
-    'anaconda::nltk=3.4.*' \
-    'plotly::plotly=4.5.*' \
+    'conda-forge::nltk=3.4.*' \
+    'conda-forge::plotly=4.5.*' \
     && \
     conda clean --all -f -y && \
     jupyter nbextension enable --py widgetsnbextension --sys-prefix && \
