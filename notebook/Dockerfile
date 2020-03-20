@@ -109,6 +109,9 @@ RUN mkdir /opt/app \
         exit 1; \
     fi
 
+ENV NLTK_DATA=$HOME/nltk_data
+RUN python -m nltk.downloader popular
+
 COPY --chown=1000:100 examples/ /home/$NB_USER/examples
 COPY prepare.sh /usr/bin/prepare.sh
 
