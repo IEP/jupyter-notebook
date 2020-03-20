@@ -100,9 +100,6 @@ ENV XDG_CACHE_HOME /home/$NB_USER/.cache/
 RUN MPLBACKEND=Agg python -c "import matplotlib.pyplot" && \
     fix-permissions /home/$NB_USER
 
-# Custom
-RUN python -m nltk.downloader popular
-
 # Dask
 USER root
 
