@@ -68,7 +68,9 @@ RUN conda install --yes \
     jupyter labextension install @jupyter-widgets/jupyterlab-manager@^2.0.0 && \
     jupyter labextension install @bokeh/jupyter_bokeh@^2.0.0 && \
     jupyter labextension install jupyter-matplotlib@^0.7.2 && \
-    jupyter labextension install dask-labextension \
+    jupyter labextension install dask-labextension && \
+    jupyter labextension install jupyerlab-plotly && \
+    jupyter labextension install plotlywidget && \
     jupyter lab build && \
     npm cache clean --force && \
     rm -rf $CONDA_DIR/share/jupyter/lab/staging && \
