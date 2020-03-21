@@ -69,7 +69,7 @@ RUN conda install --yes \
     jupyter labextension install @bokeh/jupyter_bokeh@^2.0.0 && \
     jupyter labextension install jupyter-matplotlib@^0.7.2 && \
     jupyter labextension install dask-labextension && \
-    jupyter labextension install jupyerlab-plotly && \
+    jupyter labextension install jupyterlab-plotly && \
     jupyter labextension install plotlywidget && \
     jupyter lab build && \
     npm cache clean --force && \
