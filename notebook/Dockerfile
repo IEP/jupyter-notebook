@@ -84,6 +84,7 @@ RUN conda install --yes \
 
 # Dask ML
 RUN pip install --no-cache-dir \
+    joblib \
     dask-ml[complete] \
     && fix-permissions $CONDA_DIR \
     && fix-permissions /home/$NB_USER
