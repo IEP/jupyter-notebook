@@ -129,8 +129,8 @@ ENV PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.9-src.zip \
 USER $NB_UID
 
 RUN pip install --quiet --no-cache-dir \
-    'tensorflow==2.2.0' && \
-    'recordlinkage' && \
+    'tensorflow==2.2.0' \
+    'recordlinkage' \
     'dedupe' && \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}"
