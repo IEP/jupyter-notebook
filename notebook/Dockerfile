@@ -1,46 +1,72 @@
-FROM jupyter/base-notebook:lab-2.0.1
+ARG BASE_CONTAINER=jupyter/base-notebook
+FROM $BASE_CONTAINER
 
-LABEL maintainer="gpratama"
+LABEL maintainer="Ivan Ega Pratama <ivan.ega.p@gmail.com>"
+
+SHELL ["/bin/bash", "pipefail", "-c"]
 
 USER root
 
-RUN apt-get update \
-  && apt-get install -yq --no-install-recommends \
-  git \
-  pandoc \
-  texlive-xetex \
-  texlive-fonts-recommended \
-  texlive-generic-recommended \
-  unzip \
-  p7zip-full \
-  # Scipy
-  ffmpeg \
-  # Dask
-  graphviz \
-  && apt-get clean && rm -rf /var/lib/apt/lists/*
+ENV APACHE_SPARK_VERSION=3.0.0 \
+    HADOOP_VERSION=3.2
 
+RUN apt-get update && apt-get install -yq --no-install-recommends \
+    build-essential \
+    emacs-nox \
+    vim-tiny \
+    git \
+    inkscape \
+    jed \
+    libsm6 \
+    libxext-dev \
+    libxrender1 \
+    lmodern \
+    netcat \
+    python-dev \
+    # ---- nbconvert dependencies ----
+    texlive-xetex \
+    texlive-fonts-recommended \
+    texlive-plain-generic \
+    # Optional dependency
+    texlive-fonts-extra \
+    # ----
+    tzdata \
+    unzip \
+    nano \
+    # Extra from scipy-notebook
+    ffmpeg \
+    dvipng \
+    # Extra from pyspark-notebook
+    openjdk-11-jre-headless \
+    ca-certificates-java \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Switch back to jovyan to avoid accidental container runs as root
 USER $NB_UID
 
-# Scipy
-RUN conda install --yes \
-    'beautifulsoup4=4.8.*' \
+RUN conda install --quiet --yes \
+    'beautifulsoup4=4.9.*' \
     'conda-forge::blas=*=openblas' \
-    'bokeh=1.4.*' \
-    'cloudpickle=1.3.*' \
+    'bokeh=2.0.*' \
+    'bottleneck=1.3.*' \
+    'cloudpickle=1.4.*' \
     'cython=0.29.*' \
+    'dask=2.15.*' \
     'dill=0.3.*' \
     'h5py=2.10.*' \
     'hdf5=1.10.*' \
     'ipywidgets=7.5.*' \
     'ipympl=0.5.*'\
-    'matplotlib-base=3.1.*' \
+    'matplotlib-base=3.2.*' \
+    # numba update to 0.49 fails resolving deps.
     'numba=0.48.*' \
     'numexpr=2.7.*' \
     'pandas=1.0.*' \
     'patsy=0.5.*' \
     'protobuf=3.11.*' \
+    'pytables=3.6.*' \
     'scikit-image=0.16.*' \
-    'scikit-learn=0.22.*' \
+    'scikit-learn=0.23.*' \
     'scipy=1.4.*' \
     'seaborn=0.10.*' \
     'sqlalchemy=1.3.*' \
@@ -48,77 +74,65 @@ RUN conda install --yes \
     'sympy=1.5.*' \
     'vincent=0.4.*' \
     'widgetsnbextension=3.5.*'\
-    'xlrd' \
-    # Dask
-    'conda-forge::python-blosc=1.8.3' \
-    'conda-forge::cytoolz=0.10.1' \
-    'conda-forge::dask=2.12.0' \
-    'conda-forge::lz4=3.0.2' \
-    'conda-forge::nomkl=1.0' \
-    'conda-forge::dask-labextension=2.0.0' \
-    'conda-forge::python-graphviz=0.13.2' \
-    'conda-forge::html5lib=1.0.1' \
-    # Custom
-    'conda-forge::wordcloud=1.6.*' \
-    'conda-forge::nltk=3.4.*' \
-    'conda-forge::plotly=4.5.*' \
+    'xlrd=1.2.*' \
     && \
     conda clean --all -f -y && \
+    # Activate ipywidgets extension in the environment that runs the notebook server
     jupyter nbextension enable --py widgetsnbextension --sys-prefix && \
-    jupyter labextension install @jupyter-widgets/jupyterlab-manager@^2.0.0 && \
-    jupyter labextension install @bokeh/jupyter_bokeh@^2.0.0 && \
-    jupyter labextension install jupyter-matplotlib@^0.7.2 && \
-    jupyter labextension install dask-labextension && \
-    jupyter labextension install jupyterlab-plotly && \
-    jupyter labextension install plotlywidget && \
-    jupyter lab build && \
+    # Also activate ipywidgets extension for JupyterLab
+    # Check this URL for most recent compatibilities
+    # https://github.com/jupyter-widgets/ipywidgets/tree/master/packages/jupyterlab-manager
+    jupyter labextension install @jupyter-widgets/jupyterlab-manager@^2.0.0 --no-build && \
+    jupyter labextension install @bokeh/jupyter_bokeh@^2.0.0 --no-build && \
+    jupyter labextension install jupyter-matplotlib@^0.7.2 --no-build && \
+    jupyter labextension install @oriolmirosa/jupyterlab_materialdarker && \
+    jupyter lab build -y && \
+    jupyter lab clean -y && \
     npm cache clean --force && \
-    rm -rf $CONDA_DIR/share/jupyter/lab/staging && \
-    rm -rf /home/$NB_USER/.cache/yarn && \
-    rm -rf /home/$NB_USER/.node-gyp && \
-    find /opt/conda/ -type f,l -name '*.a' -delete && \
-    find /opt/conda/ -type f,l -name '*.pyc' -delete && \
-    find /opt/conda/lib/python*/site-packages/bokeh/server/static -type f,l -name '*.js' -not -name '*.min.js' -delete && \
-    fix-permissions $CONDA_DIR && \
-    fix-permissions /home/$NB_USER
+    rm -rf "/home/${NB_USER}/.cache/yarn" && \
+    rm -rf "/home/${NB_USER}/.node-gyp" && \
+    fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${NB_USER}"
 
-# Dask ML
-RUN pip install --no-cache-dir \
-    joblib \
-    dask-ml[complete] \
-    && fix-permissions $CONDA_DIR \
-    && fix-permissions /home/$NB_USER
-
-# Scipy
-RUN cd /tmp && \
-    git clone https://github.com/PAIR-code/facets.git && \
-    cd facets && \
-    jupyter nbextension install facets-dist/ --sys-prefix && \
-    cd && \
+# Install facets which does not have a pip or conda package at the moment
+WORKDIR /tmp
+RUN git clone https://github.com/PAIR-code/facets.git && \
+    jupyter nbextension install facets/facets-dist/ --sys-prefix && \
     rm -rf /tmp/facets && \
-    fix-permissions $CONDA_DIR && \
-    fix-permissions /home/$NB_USER
+    fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${NB_USER}"
 
-ENV XDG_CACHE_HOME /home/$NB_USER/.cache/
+# Import matplotlib the first time to build the font cache.
+ENV XDG_CACHE_HOME="/home/${NB_USER}/.cache/"
+
 RUN MPLBACKEND=Agg python -c "import matplotlib.pyplot" && \
-    fix-permissions /home/$NB_USER
+    fix-permissions "/home/${NB_USER}"
 
-# Dask
 USER root
 
-RUN mkdir /opt/app \
-    && if [ "$NB_UID" != "1000" ] || [ "$NB_GID" != "100" ]; then \
-        echo "Jupyter's NB_UID/NB_GID changed, need to update the Dockerfile"; \
-        exit 1; \
-    fi
+# hadolint ignore=SC2046
+RUN wget -q $(wget -qO- https://www.apache.org/dyn/closer.lua/spark/spark-${APACHE_SPARK_VERSION}/spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz\?as_json | \
+    python -c "import sys, json; content=json.load(sys.stdin); print(content['preferred']+content['path_info'])") && \
+    echo "BFE45406C67CC4AE00411AD18CC438F51E7D4B6F14EB61E7BF6B5450897C2E8D3AB020152657C0239F253735C263512FFABF538AC5B9FFFA38B8295736A9C387 *spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" | sha512sum -c - && \
+    tar xzf "spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" -C /usr/local --owner root --group root --no-same-owner && \
+    rm "spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz"
 
-ENV NLTK_DATA=$HOME/nltk_data
-RUN python -m nltk.downloader popular
+WORKDIR /usr/local
+RUN ln -s "spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}" spark
 
-COPY --chown=1000:100 examples/ /home/$NB_USER/examples
-COPY prepare.sh /usr/bin/prepare.sh
+# Configure Spark
+ENV SPARK_HOME=/usr/local/spark
+ENV PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.9-src.zip \
+    SPARK_OPTS="--driver-java-options=-Xms1024M --driver-java-options=-Xmx4096M --driver-java-options=-Dlog4j.logLevel=info" \
+    PATH=$PATH:$SPARK_HOME/bin
 
-USER $NB_USER
+USER $NB_UID
 
-ENTRYPOINT ["tini", "--", "/usr/bin/prepare.sh"]
-CMD ["start.sh", "jupyter", "lab"]
+RUN pip install --quiet --no-cache-dir \
+    'tensorflow==2.2.0' && \
+    'recordlinkage' && \
+    'dedupe' && \
+    fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${NB_USER}"
+
+WORKDIR $HOME
