@@ -3,7 +3,7 @@ FROM $BASE_CONTAINER
 
 LABEL maintainer="Ivan Ega Pratama <ivan.ega.p@gmail.com>"
 
-SHELL ["/bin/bash", "pipefail", "-c"]
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 USER root
 
