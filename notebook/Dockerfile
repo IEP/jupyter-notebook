@@ -135,4 +135,8 @@ RUN pip install --quiet --no-cache-dir \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}"
 
+# Add spark package
+RUN spark-shell --packages \
+    graphframes:graphframes:0.8.0-spark3.0-s_2.12
+
 WORKDIR $HOME
