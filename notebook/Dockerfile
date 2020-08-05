@@ -132,6 +132,7 @@ RUN pip install --quiet --no-cache-dir \
     'tensorflow==2.2.0' \
     'recordlinkage' \
     'dedupe' && \
+    'lxml' && \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}"
 
