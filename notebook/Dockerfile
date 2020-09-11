@@ -43,12 +43,19 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     ffmpeg \
     dvipng \
     # Extra from pyspark-notebook
+    curl \
+    graphviz \
     "openjdk-${openjdk_version}-jre-headless" \
     ca-certificates-java \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+RUN curl -Lo /usr/local/bin/coursier https://git.io/coursier-cli && \
+    chmod +x /usr/local/bin/coursier
+
 # Switch back to jovyan to avoid accidental container runs as root
 USER $NB_UID
+
+RUN /usr/local/bin/coursier launch --fork almond -- --install
 
 RUN conda install --quiet --yes \
     'beautifulsoup4=4.9.*' \
