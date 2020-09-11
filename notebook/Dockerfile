@@ -7,8 +7,14 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 USER root
 
-ENV APACHE_SPARK_VERSION=3.0.0 \
-    HADOOP_VERSION=3.2
+ARG spark_version="3.0.0"
+ARG hadoop_version="3.2"
+ARG spark_checksum="BFE45406C67CC4AE00411AD18CC438F51E7D4B6F14EB61E7BF6B5450897C2E8D3AB020152657C0239F253735C263512FFABF538AC5B9FFFA38B8295736A9C387"
+ARG py4j_version="0.10.9"
+ARG openjdk_version="11"
+
+ENV APACHE_SPARK_VERSION="${spark_version}" \
+    HADOOP_VERSION="${hadoop_version}"
 
 RUN apt-get update && apt-get install -yq --no-install-recommends \
     build-essential \
@@ -37,7 +43,7 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     ffmpeg \
     dvipng \
     # Extra from pyspark-notebook
-    openjdk-11-jre-headless \
+    "openjdk-${openjdk_version}-jre-headless" \
     ca-certificates-java \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -47,11 +53,11 @@ USER $NB_UID
 RUN conda install --quiet --yes \
     'beautifulsoup4=4.9.*' \
     'conda-forge::blas=*=openblas' \
-    'bokeh=2.0.*' \
+    'bokeh=2.1.*' \
     'bottleneck=1.3.*' \
-    'cloudpickle=1.4.*' \
+    'cloudpickle=1.5.*' \
     'cython=0.29.*' \
-    'dask=2.15.*' \
+    'dask=2.20.*' \
     'dill=0.3.*' \
     'h5py=2.10.*' \
     'hdf5=1.10.*' \
@@ -61,17 +67,17 @@ RUN conda install --quiet --yes \
     # numba update to 0.49 fails resolving deps.
     'numba=0.48.*' \
     'numexpr=2.7.*' \
-    'pandas=1.0.*' \
+    'pandas=1.1.*' \
     'patsy=0.5.*' \
-    'protobuf=3.11.*' \
+    'protobuf=3.12.*' \
     'pytables=3.6.*' \
-    'scikit-image=0.16.*' \
+    'scikit-image=0.17.*' \
     'scikit-learn=0.23.*' \
-    'scipy=1.4.*' \
+    'scipy=1.5.*' \
     'seaborn=0.10.*' \
     'sqlalchemy=1.3.*' \
     'statsmodels=0.11.*' \
-    'sympy=1.5.*' \
+    'sympy=1.6.*' \
     'vincent=0.4.*' \
     'widgetsnbextension=3.5.*'\
     'xlrd=1.2.*' \
@@ -113,7 +119,7 @@ USER root
 # hadolint ignore=SC2046
 RUN wget -q $(wget -qO- https://www.apache.org/dyn/closer.lua/spark/spark-${APACHE_SPARK_VERSION}/spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz\?as_json | \
     python -c "import sys, json; content=json.load(sys.stdin); print(content['preferred']+content['path_info'])") && \
-    echo "BFE45406C67CC4AE00411AD18CC438F51E7D4B6F14EB61E7BF6B5450897C2E8D3AB020152657C0239F253735C263512FFABF538AC5B9FFFA38B8295736A9C387 *spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" | sha512sum -c - && \
+    echo "${spark_checksum} *spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" | sha512sum -c - && \
     tar xzf "spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" -C /usr/local --owner root --group root --no-same-owner && \
     rm "spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz"
 
@@ -122,7 +128,7 @@ RUN ln -s "spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}" spark
 
 # Configure Spark
 ENV SPARK_HOME=/usr/local/spark
-ENV PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.9-src.zip \
+ENV PYTHONPATH="${SPARK_HOME}/python:${SPARK_HOME}/python/lib/py4j-${py4j_version}-src.zip" \
     SPARK_OPTS="--driver-java-options=-Xms1024M --driver-java-options=-Xmx4096M --driver-java-options=-Dlog4j.logLevel=info" \
     PATH=$PATH:$SPARK_HOME/bin
 
@@ -133,6 +139,16 @@ RUN pip install --quiet --no-cache-dir \
     'recordlinkage' \
     'dedupe' \
     'lxml' && \
+    fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${NB_USER}"
+
+# Install pyarrow
+RUN conda install --quiet -y \
+    'pyarrow' \
+    'spylon-kernel=0.4*' && \
+    conda clean --all -f -y && \
+    python -m spylon_kernel install --sys-prefix && \
+    rm -rf "/home/${NB_USER}/.local" && \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}"
 
